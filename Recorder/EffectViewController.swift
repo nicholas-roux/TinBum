@@ -103,18 +103,36 @@ class RecordViewController: UIViewController {
         /// Mix the mic channels into 1
         let micMixer = AKMixer(mic)
         
-        /// Use low-pass filter on mic input
-        let lowPassFilter = AKLowPassFilter(micMixer)
+        /// Generate pink noise
+        let pink = AKPinkNoise(amplitude: 1)
         
-        /// Low-pass filter settings
-        lowPassFilter.cutoffFrequency = 2000 // Hz
-        lowPassFilter.resonance = 0 // dB
+        /// Generate white noise
+        let white = AKWhiteNoise(amplitude: 1)
+        
+        /// Mix the white and the pink noise
+        let pinkWhiteMixer = AKDryWetMixer(pink, white, balance: 0)
+        
+        /// Filter the pink and white noise mix through a high pass filter
+        let filter = AKHighPassFilter(pinkWhiteMixer)
+        
+        filter.cutoffFrequency = 6000 // Hz
+        filter.resonance = 0 // dB
+        
+        /// Mix the generated noise with the mic input
+        let micNoiseMix = AKMixer(filter, micMixer)
         
         /// Set the audio output to the low-pass filtered mic input
-        AudioKit.output = lowPassFilter
+        AudioKit.output = micNoiseMix
         
         /// Intialize AudioKit
         AudioKit.start()
+        
+        /// Initialize pink noise
+        pink.start()
+        
+        /// Initialize white noise
+        white.start()
+        
     }
     
     ///---------------------------------------------------------------///
